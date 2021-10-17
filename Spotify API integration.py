@@ -12,7 +12,7 @@ import datetime
 import sqlite3
 import sys
 
-##1701
+##1703
 DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
 USER_ID = "1121890221" # your Spotify username 
 TOKEN = "BQCIGgKvJnDA6vB72uElf4-ifdmieR8mCxOXNHN_6ee4Ar6WTqPI_irB4d0dkQ_LyrihqBkMOVxHttMUPOONzOcyb9f4jYo7CiNYsCFAD5udL-oRt1fMgEh_NCRKI9adHuxRTVLctk1FxgXL" # your Spotify API token
