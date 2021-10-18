@@ -12,37 +12,120 @@ import datetime
 import sqlite3
 import sys
 
-## Token til post metoden
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlblR5cGUiOiJDdXN0b21lckFQSV9SZWZyZXNoIiwidG9rZW5pZCI6IjNhYWY3NGFjLWU4ZDMtNDBhYi1hOTljLTFjNjI5ODc4MzI1MSIsImp0aSI6IjNhYWY3NGFjLWU4ZDMtNDBhYi1hOTljLTFjNjI5ODc4MzI1MSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiUElEOjkyMDgtMjAwMi0yLTU3MTI3MTY1MTgwOCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2dpdmVubmFtZSI6Ik5pYXQgVG9sb3UgQW1hbiIsImxvZ2luVHlwZSI6IktleUNhcmQiLCJwaWQiOiI5MjA4LTIwMDItMi01NzEyNzE2NTE4MDgiLCJ0eXAiOiJQT0NFUyIsImV4cCI6MTY0MzQ0MjgxNiwiaXNzIjoiRW5lcmdpbmV0IiwidG9rZW5OYW1lIjoiYXBpX2hqZW0iLCJhdWQiOiJFbmVyZ2luZXQifQ.8rNeV9Mevg8embRNYxrL20TcS-8mCFUWhsa5yRqjliw" # your Spotify API token
+##1711
+DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
+USER_ID = "1121890221" # your Spotify username 
+TOKEN = "BQAhYcxrrcKPmryvyEgGH6-UEeGr4LM-NeQkAYXkS-gfSFANUBkfyT8nVqeszxBY5fi1Lfg5R2rk4aw5xEhdNCIXKGRJyY2lDLARfrkuNGht_8BlEX6QeKzidovQtB0RSrVvHpLdlZniCWEX" # your Spotify API token
+
+# your Spotify API token
+# Generate your token here:  https://developer.spotify.com/console/get-recently-played/
+# Note: You need a Spotify account (can be easily created for free)
+
+# defining for checking for empty data && unique DateTime && checking if corrupted data is sent with null values
+def check_if_valid_data(df: pd.DataFrame) -> bool:
+    # Check if dataframe is empty
+    if df.empty:
+        print("No songs downloaded. Finishing execution")
+        sys.exit()
+        ## Originally "sys.exit()" ---> "return False" 
+
+    # Primary Key Check
+    if pd.Series(df['played_at']).is_unique:
+        pass
+    else:
+        raise Exception("Primary Key check is violated")
+
+    # Check for nulls
+    if df.isnull().values.any():
+        raise Exception("Null values found")
+
+    # Check that all timestamps are of yesterday's date
+    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    timestamps = df["timestamp"].tolist()
+    for timestamp in timestamps:
+        if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
+            raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
+
+    return True
 
 if __name__ == "__main__":
 
     # Extract part of the ETL process
-    # Headers
-    headers_datatoken = {
+ 
+    headers = {
         "Accept" : "application/json",
         "Content-Type" : "application/json",
         "Authorization" : "Bearer {token}".format(token=TOKEN)
     }
-    # Requesting short-lived token in json-format
-    get_url = "https://api.eloverblik.dk/CustomerApi/api/token"
-    r = requests.get(get_url, headers=headers_datatoken).json()
-    
-    # Vi returnerer "Value" delen af json-formatet eks. {"result": "LANG TOKEN STRENG"}
-    datatoken = r["result"]
-    ## Done.
+    ## Convert time to Unix timestamp in miliseconds      
+    today = datetime.datetime.now()
+    yesterday = today - datetime.timedelta(days=1)
+    yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
 
-## Nu skal vi bruge short-lived token til at lave en POST-method og returnerer vores værdier  
-    # Header
-    headers = {
-        "Accept" : "application/json",
-        "Content-Type" : "application/json",
-        "Authorization" : "Bearer "+ datatoken
+    # Download all songs you've listened to "after yesterday", which means in the last 24 hours     
+    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = headers)
+    data = r.json()
+    
+    song_names = []
+    artist_names = []
+    played_at_list = []
+    timestamps = []
+    
+    ## Validate API-Key
+    ##if KeyError in data:
+      ##  raise Exception("KeyError. API key is incorrect")
+    ##else: 
+      ##pass
+    ##print("API-Key Correct")
+
+    # Extracting only the relevant bits of data from the json object
+    try:
+        for song in data["items"]:
+            song_names.append(song["track"]["name"])
+            artist_names.append(song["track"]["album"]["artists"][0]["name"])
+            played_at_list.append(song["played_at"])
+            timestamps.append(song["played_at"][0:10])
+    except KeyError: sys.exit("Check API Key")
+        
+    # Prepare a dictionary in order to turn it into a pandas dataframe below       
+    song_dict = {
+        "song_name" : song_names,
+        "artist_name": artist_names,
+        "played_at" : played_at_list,
+        "timestamp" : timestamps
     }
 
-    # Post metoden kræver målepunktsnummeret
-    data = """{"meteringPoints": {"meteringPoint": ["571313174113669471"]}}"""
-    post_url = "https://api.eloverblik.dk/CustomerApi/api/MeterData/GetTimeSeries/2016-01-01/2021-10-16/Hour"
-    req = requests.post(post_url, headers=headers, data=data).json()
+    song_df = pd.DataFrame(song_dict, columns = ["song_name", "artist_name", "played_at", "timestamp"])
     
-    print(req)
+    # Validate
+    if check_if_valid_data(song_df):
+        print("Data valid, proceed to Load stage")
+
+    # Load
+    engine = sqlalchemy.create_engine(DATABASE_LOCATION)
+    conn = sqlite3.connect('my_played_tracks.sqlite')
+    cursor = conn.cursor()
+
+    ## We are creating the schema in the table
+    sql_query = """
+    CREATE TABLE IF NOT EXISTS my_played_tracks(
+        song_name VARCHAR(200),
+        artist_name VARCHAR(200),
+        played_at VARCHAR(200),
+        timestamp VARCHAR(200),
+        CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
+    )
+    """
+    ##we execute the sql query
+    cursor.execute(sql_query)
+    print("Opened database successfully")
+
+    ##You can choose 'replace or 'append' depending on what you want
+    try:
+        song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
+    except:
+        print("Data already exists in the database")
+
+    conn.close()
