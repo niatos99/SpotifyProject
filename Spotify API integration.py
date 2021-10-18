@@ -1,5 +1,5 @@
 from sqlite3.dbapi2 import Connection
-from numpy import empty
+from numpy import empty, errstate
 from pandas.core.arrays import boolean
 from pandas.core.frame import DataFrame
 import sqlalchemy
@@ -12,11 +12,12 @@ import datetime
 import sqlite3
 import sys
 
-##1655
+##1711
 DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
 USER_ID = "1121890221" # your Spotify username 
-TOKEN = "BQCIGgKvJnDA6vB72uElf4-ifdmieR8mCxOXNHN_6ee4Ar6WTqPI_irB4d0dkQ_LyrihqBkMOVxHttMUPOONzOcyb9f4jYo7CiNYsCFAD5udL-oRt1fMgEh_NCRKI9adHuxRTVLctk1FxgXL" # your Spotify API token
+TOKEN = "BQAYdw9-xgEcdRPLN625spsacFA-Ca5uMbhaxzIVAW5UAc_XsofdfosbmvKFlk50St0Kir5Us6L6cNkOey0EnKOU1jETRl8oQanDGrez5N_3lhNfipCAJcsHuFRc01NhoR07Tb-vUAl5iSuH" # your Spotify API token
 
+# your Spotify API token
 # Generate your token here:  https://developer.spotify.com/console/get-recently-played/
 # Note: You need a Spotify account (can be easily created for free)
 
@@ -26,7 +27,7 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
     if df.empty:
         print("No songs downloaded. Finishing execution")
         sys.exit()
-        ## this is it the origianal code instead of "sys.exit()" ---> return False 
+        ## Originally "sys.exit()" ---> "return False" 
 
     # Primary Key Check
     if pd.Series(df['played_at']).is_unique:
@@ -63,8 +64,7 @@ if __name__ == "__main__":
     yesterday = today - datetime.timedelta(days=1)
     yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
 
-    # Download all songs you've listened to "after yesterday", which means in the last 24 hours
-    # Hardcorded time for testing purposes      
+    # Download all songs you've listened to "after yesterday", which means in the last 24 hours     
     r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = headers)
     data = r.json()
     
@@ -80,12 +80,12 @@ if __name__ == "__main__":
       pass
     print("API-Key Correct")
 
-    # Extracting only the relevant bits of data from the json object      
+    # Extracting only the relevant bits of data from the json object
     for song in data["items"]:
-        song_names.append(song["track"]["name"])
-        artist_names.append(song["track"]["album"]["artists"][0]["name"])
-        played_at_list.append(song["played_at"])
-        timestamps.append(song["played_at"][0:10])
+            song_names.append(song["track"]["name"])
+            artist_names.append(song["track"]["album"]["artists"][0]["name"])
+            played_at_list.append(song["played_at"])
+            timestamps.append(song["played_at"][0:10])
         
     # Prepare a dictionary in order to turn it into a pandas dataframe below       
     song_dict = {
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     conn = sqlite3.connect('my_played_tracks.sqlite')
     cursor = conn.cursor()
 
-## we are creating the schema in the table
+    ## We are creating the schema in the table
     sql_query = """
     CREATE TABLE IF NOT EXISTS my_played_tracks(
         song_name VARCHAR(200),
@@ -116,11 +116,11 @@ if __name__ == "__main__":
         CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
     )
     """
-##we execute the sql query
+    ##we execute the sql query
     cursor.execute(sql_query)
     print("Opened database successfully")
 
-##You can choose 'replace or 'append' depending on what you want
+    ##You can choose 'replace or 'append' depending on what you want
     try:
         song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
     except:
