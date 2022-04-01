@@ -15,11 +15,7 @@ import sys
 ##1711
 DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
 USER_ID = "1121890221" # your Spotify username 
-TOKEN = "BQAhYcxrrcKPmryvyEgGH6-UEeGr4LM-NeQkAYXkS-gfSFANUBkfyT8nVqeszxBY5fi1Lfg5R2rk4aw5xEhdNCIXKGRJyY2lDLARfrkuNGht_8BlEX6QeKzidovQtB0RSrVvHpLdlZniCWEX" # your Spotify API token
-
-# your Spotify API token
-# Generate your token here:  https://developer.spotify.com/console/get-recently-played/
-# Note: You need a Spotify account (can be easily created for free)
+TOKEN = "BQAhYcxrrcKPmryvyEgGH6-UEeGr4LM-NeQkAYXkS-gfSFANUBkfyT8nVqeszxBY5fi1Lfg5R2rk4aw5xEhdNCIXKGRJyY2lDLARfrkuNGht_8BlEX6QeKzidovQtB0RSrVvHpLdlZniCWEX" #Spotify token
 
 # defining for checking for empty data && unique DateTime && checking if corrupted data is sent with null values
 def check_if_valid_data(df: pd.DataFrame) -> bool:
