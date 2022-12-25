@@ -13,9 +13,10 @@ import sqlite3
 import sys
 
 ##1711
-DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
-USER_ID = "1121890221" # your Spotify username 
-TOKEN = "BQAhYcxrrcKPmryvyEgGH6-UEeGr4LM-NeQkAYXkS-gfSFANUBkfyT8nVqeszxBY5fi1Lfg5R2rk4aw5xEhdNCIXKGRJyY2lDLARfrkuNGht_8BlEX6QeKzidovQtB0RSrVvHpLdlZniCWEX" #Spotify token
+DATABASE_LOCATION = "#####OPTIONAL####"
+USER_ID = "" # your Spotify username 
+TOKEN = ""
+#Spotify token
 
 # defining for checking for empty data && unique DateTime && checking if corrupted data is sent with null values
 def check_if_valid_data(df: pd.DataFrame) -> bool:
@@ -25,7 +26,7 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         sys.exit()
         ## Originally "sys.exit()" ---> "return False" 
 
-    # Primary Key Check
+    # Primary Key
     if pd.Series(df['played_at']).is_unique:
         pass
     else:
@@ -36,7 +37,8 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         raise Exception("Null values found")
 
     # Check that all timestamps are of yesterday's date
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    yesterday = datetime.datetime.now()
+    ## - datetime.timedelta(days=1)
     yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
 
     timestamps = df["timestamp"].tolist()
@@ -68,13 +70,6 @@ if __name__ == "__main__":
     artist_names = []
     played_at_list = []
     timestamps = []
-    
-    ## Validate API-Key
-    ##if KeyError in data:
-      ##  raise Exception("KeyError. API key is incorrect")
-    ##else: 
-      ##pass
-    ##print("API-Key Correct")
 
     # Extracting only the relevant bits of data from the json object
     try:
@@ -83,7 +78,7 @@ if __name__ == "__main__":
             artist_names.append(song["track"]["album"]["artists"][0]["name"])
             played_at_list.append(song["played_at"])
             timestamps.append(song["played_at"][0:10])
-    except KeyError: sys.exit("Check API Key")
+    except KeyError: sys.exit("PLEASE Check API Key")
         
     # Prepare a dictionary in order to turn it into a pandas dataframe below       
     song_dict = {
@@ -98,30 +93,34 @@ if __name__ == "__main__":
     # Validate
     if check_if_valid_data(song_df):
         print("Data valid, proceed to Load stage")
+    
+    # LOAD
+    song_df.to_excel(r'C:\Users\w31610\Desktop\ProjectTest\exceltest\Spotify.xlsx', sheet_name='Sheet', index=False)
+    print(song_df)
+    
+    # # Load
+    # engine = sqlalchemy.create_engine(DATABASE_LOCATION)
+    # conn = sqlite3.connect('my_played_tracks.sqlite')
+    # cursor = conn.cursor()
 
-    # Load
-    engine = sqlalchemy.create_engine(DATABASE_LOCATION)
-    conn = sqlite3.connect('my_played_tracks.sqlite')
-    cursor = conn.cursor()
+    # ## We are creating the schema in the table
+    # sql_query = """
+    # CREATE TABLE IF NOT EXISTS my_played_tracks(
+    #     song_name VARCHAR(200),
+    #     artist_name VARCHAR(200),
+    #     played_at VARCHAR(200),
+    #     timestamp VARCHAR(200),
+    #     CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
+    # )
+    # """
+    # ##we execute the sql query
+    # cursor.execute(sql_query)
+    # print("Opened database")
 
-    ## We are creating the schema in the table
-    sql_query = """
-    CREATE TABLE IF NOT EXISTS my_played_tracks(
-        song_name VARCHAR(200),
-        artist_name VARCHAR(200),
-        played_at VARCHAR(200),
-        timestamp VARCHAR(200),
-        CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
-    )
-    """
-    ##we execute the sql query
-    cursor.execute(sql_query)
-    print("Opened database successfully")
+    # ##You can choose 'replace or 'append' depending on what you want
+    # try:
+    #     song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
+    # except:
+    #     print("data exist already")
 
-    ##You can choose 'replace or 'append' depending on what you want
-    try:
-        song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
-    except:
-        print("Data already exists in the database")
-
-    conn.close()
+    # conn.close()
