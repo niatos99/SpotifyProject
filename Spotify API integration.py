@@ -1,3 +1,8 @@
+
+
+#  ETL MED SPOTIFY API OG HVILKET MUSIK JEG HØRER MEST  #     
+
+
 from sqlite3.dbapi2 import Connection
 from numpy import empty, errstate
 from pandas.core.arrays import boolean
