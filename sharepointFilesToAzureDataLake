@@ -23,7 +23,9 @@ directory_name_LastModified_csv     =       'Folder/Subfolder/SubSubfolder/Where
 site_url                            =       'https://{Yourcompany}.sharepoint.com/sites/Something/Something'
 list_name                           =       '/sites/Something/SomethingMore/TheSiteWhereYourFilesAre'
 
-# Create a Linked service in Synapse and put the name of it in the parameters above. The names on the right side is the name of your different secrets inside Keyvault. #Im using a spark feature/command. but you can refer to you keyvault in another way if you want. this is just my choice. you cannot use this method if you dont have a spark engine
+# Create a Linked service in Synapse and put the name of it in the parameters above. 
+The names on the right side is the name of your different secrets inside Keyvault. #Im using a spark feature/command. but you can refer to you keyvault in another way if you want. this is just my choice. you cannot use this method if you dont have a spark engine
+The name on the left side is the name of your linked Service you have created to you keyvault instance/ressource
 # Vi bruger Managed identity i den oprettede Linked Service i Synapse til at authenticate til Key Vault.
 client_id                           =   mssparkutils.credentials.getSecretWithLS(LinkedService_name,'ClientId')
 client_secret                       =   mssparkutils.credentials.getSecretWithLS(LinkedService_name,'ClientSecret')
@@ -32,6 +34,7 @@ access_key                          =   mssparkutils.credentials.getSecretWithLS
 connection_string                   =   mssparkutils.credentials.getSecretWithLS(LinkedService_name,'ConnectionString')
 
 # Authenticater til Data Lake og skaber forbindelse til stien sat i parameter sektionen
+#Authenticating to Data Lake
 try:
     logging.info('Connecting to Data Lake: {}'.format(account_url))
     print('Connecting to Data Lake: {}'.format(account_url))
@@ -64,7 +67,8 @@ except Exception as e:
     print("Error occurred: ", e)
     sys.stdout.flush()
 
-#It reads last modified datetime from the folder where the csv file is so that it only gets newest files. If there is no file already or it is the first time you are runnin this script it will use the hardcoded date in the except part. But the second time you run the script it will read not go to theexception part. The new date stamp is set in the end of this script below
+####This is for the incremental load so we only get the newest files### It is just a csv that it reads a datetime string from. and in the end of the entire script and when it is successful, it writes a new timestamp. 
+#It reads last modified datetime from the folder where the csv file is so that it only gets newest files. If there is no file already or it is the first time you are running this script it will use the hardcoded date in the except part. But the second time you run the script it will not go to the exception part. Remember: The new date stamp is set in the end of this script below
 # Læser csv med LastModified datetime.
 try:
     directory_client_lastModfied = file_system_client.get_directory_client(directory_name_LastModified_csv)
@@ -72,6 +76,9 @@ try:
     read_csv = last_modified_date_file.download_file().readall().decode('utf-8')
 except:
     read_csv = '2000-01-01T11:45:15Z'
+
+###Whatever happened above, it will take the date from the csv part (it does not care whether it came from the try part or except part.
+This variable "last_modified_datetime" is used to filter the sharepoint list in the next part
 last_modified_datetime = datetime.fromisoformat(read_csv[:-1])
 print(last_modified_datetime)
 
@@ -86,9 +93,9 @@ ctx.execute_query()
 logging.info("Number of files: {}".format(len(files)))
 print("Number of files to get in Sharepoint: {}".format(len(files)), flush=True)
 sys.stdout.flush()
-# for file in files:
+# for file in files: #this is just to see the file name. it might help you to check if it is doing the right thing and taking the right files
 #     print(file.properties["TimeLastModified"]) #this is just to see the file name. it might help you to check if it is doing the right thing and taking the right files
-
+##exiting if there is no new files in the sharepoint list
 if len(files) == 0:
     print('No new files in Sharepoint. The job is stopped')
     sys.stdout.flush()
