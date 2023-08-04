@@ -1,0 +1,12 @@
+import sys
+import os
+import logging
+import azure.functions as func
+from office365.runtime.auth.authentication_context import AuthenticationContext
+from office365.sharepoint.client_context import ClientContext
+from office365.sharepoint.files.file import File
+from azure.storage.filedatalake import DataLakeFileClient, DataLakeServiceClient
+from azure.core.exceptions import ResourceNotFoundError
+import datetime
+from notebookutils import mssparkutils
+from datetime import date, datetime
