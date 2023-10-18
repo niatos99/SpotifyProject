@@ -14,9 +14,9 @@ clientID = '' # serviceprinicpal
 clientsecret = '' # serviceprinicpal
 
 # destination for parquetfiler
-Destination_Folder      = "abfss://raw@dlsgdapowerbiprod.dfs.core.windows.net/powerbi-tenant/pbidatasetsworkspace/powerbidatasetsworkspace"
+Destination_Folder      = "abfss://CONTAINERNAME@STORAGEACCOUNT.dfs.core.windows.net"
 # csv fil som logger sidste kørte tidspunkt, så vi kan opsamle dette ved hver kørsel
-LastModifiedDate_Folder = "abfss://raw@dlsgdapowerbiprod.dfs.core.windows.net/powerbi-tenant/pbidatasetsworkspace/LastModfiedLog/LastModified"
+LastModifiedDate_Folder = "abfss://CONTAINERNAME@STORAGEACCOUNT.dfs.core.windows.net"
 
 
 #### Henter refresh token, så vi kan få adgang til API'et i loganalytics
